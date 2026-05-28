@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>(y,)이 사이트 강추~ (과목별 강사추천^!^)</title>
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --background-color: #f9f9fb;
+            --card-color: #ffffff;
+            --text-color: #2d3436;
+        }
+
+        body {
+            font-family: 'Pretendard', -apple-system, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 520px;
+            background: var(--card-color);
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            padding: 30px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* 과목 선택 그리드 */
+        .subject-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        .subject-btn {
+            background: #f1f2f6;
+            color: var(--text-color);
+            border: 2px solid transparent;
+            padding: 12px 5px;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .subject-btn.selected {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        button.action-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        button:active { transform: scale(0.98); opacity: 0.9; }
+
+        /* 프로그레스 바 */
+        .progress-container {
+            width: 100%;
+            background-color: #eee;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            width: 0%;
+            height: 12px;
+            background: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            text-align: right;
+        }
+
+        /* 질문 및 답변 */
+        .question-text {
+            font-size: 17px;
+            font-weight: 600;
+            line-height: 1.6;
+            margin-bottom: 35px;
+            word-break: keep-all;
+            white-space: pre-line;
+        }
+
+        .answer-btn {
+            background: #f1f2f6;
+            color: var(--text-color);
+            border: 2px solid transparent;
+            text-align: left;
+            padding: 18px;
+            font-size: 14px;
+            width: 100%;
+            margin-bottom: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .answer-btn:hover {
+            border-color: var(--primary-color);
+            background: #f8f9ff;
+        }
+
+        /* 결과 화면 레이아웃 균형 */
+        .result-layout {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            text-align: left;
+            margin-bottom: 20px;
+            background: #fdfdfd;
+            border: 1px solid #edf2f7;
+            padding: 15px;
+            border-radius: 16px;
+        }
+        .left-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 120px;
+            flex-shrink: 0;
+        }
+        .right-col { flex: 1; }
+        
+        .badge {
+            background: #e1b12c;
+            color: white;
+            padding: 3px 6px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: bold;
+            vertical-align: middle;
+        }
+        .list-style { padding-left: 20px; line-height: 1.6; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="start-screen" class="screen active">
+        <h2 style="font-size: 20px; word-break: keep-all;">Who is your bias? I'm your bias!<br>당신에게 맞는 고결한 스승님 찾기</h2>
+        
+        <div style="width: 100%; height: 200px; border-radius: 16px; margin-bottom: 15px; overflow: hidden;">
+            <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=500" alt="인강 강사 AI 가상 일러스트" style="width:100%; height:100%; object-fit:cover;">
+        </div>
+
+        <p style="font-weight: bold; margin: 15px 0 5px 0; color: var(--primary-color);">탐구하고자 하시는 학문의 영역을 명하옵소서:</p>
+        <div class="subject-grid">
+            <button class="subject-btn" onclick="selectSubject('국어', this)">국어</button>
+            <button class="subject-btn" onclick="selectSubject('영어', this)">영어</button>
+            <button class="subject-btn" onclick="selectSubject('수학', this)">수학</button>
+            <button class="subject-btn" onclick="selectSubject('물리', this)">물리</button>
+            <button class="subject-btn" onclick="selectSubject('화학', this)">화학</button>
+            <button class="subject-btn" onclick="selectSubject('생명', this)">생명</button>
+            <button class="subject-btn" onclick="selectSubject('지구', this)">지구</button>
+            <button class="subject-btn" onclick="selectSubject('윤사', this)">윤사</button>
+            <button class="subject-btn" onclick="selectSubject('사문', this)">사문</button>
+        </div>
+
+        <button id="start-btn" class="action-btn" onclick="startQuiz()" style="background: #a4b0be; cursor: not-allowed;" disabled>과목을 먼저 골라주옵소서</button>
+    </div>
+
+    <div id="quiz-screen" class="screen">
+        <div class="progress-text" id="progress-percent">0%</div>
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="question-text" id="question-space">질문 공간</div>
+        <button class="answer-btn" id="ans1" onclick="selectAnswer('A')">답변 1</button>
+        <button class="answer-btn" id="ans2" onclick="selectAnswer('B')">답변 2</button>
+    </div>
+
+    <div id="result-screen" class="screen">
+        <h2>귀하의 성향을 예리하게 분석한 결과,<br>지식을 윤택하게 해줄 최적의 스승입니다.</h2>
+        
+        <div class="result-layout">
+            <div class="left-col">
+                <img id="lecturer-img" src="" alt="강사 프로필 사진" style="width: 110px; height: 130px; object-fit: cover; border-radius: 10px; border: 1px solid #ddd;">
+                <a id="lecturer-link" href="#" target="_blank" style="margin-top: 10px; font-size: 12px; color: var(--primary-color); font-weight: bold; text-decoration: underline; text-align: center; word-break: keep-all;">선생님 홈 바로가기</a>
+            </div>
+            <div class="right-col">
+                <div style="font-size: 15px; font-weight: bold; color: #555;">🎯 매칭 정밀도</div>
+                <div id="match-accuracy" style="font-size: 28px; font-weight: 900; color: #d63031; margin-bottom: 8px;">0%</div>
+                
+                <h3 style="margin: 0; font-size: 17px; line-height: 1.4;">
+                    <span id="lecturer-name" style="color: var(--primary-color); font-size: 19px;">강사명</span> 스승님
+                    <br><span class="badge" id="lecturer-company">소속패스</span>
+                </h3>
+            </div>
+        </div>
+
+        <div style="text-align: left; background: #fafafa; padding: 15px; border-radius: 14px;">
+            <p style="margin: 5px 0;"><strong>💡 매칭 이유:</strong> <br><span id="match-reason" style="font-size: 14px; color: #555;">이유</span></p>
+            <p style="margin: 15px 0 5px 0;"><strong>📚 핵심 수업 특징:</strong></p>
+            <ul class="list-style" id="lecturer-features"></ul>
+            <hr style="border: 0; border-top: 1px dashed #ddd; margin: 15px 0;">
+            <p style="margin: 5px 0; font-size: 14px;"><strong>👑 추천 예비 라인업:</strong> <span id="rank-list" style="color:#666;">2, 3순위</span></p>
+            <p style="margin: 5px 0; font-size: 14px;"><strong>⚠️ 기피해야 할 강의 유형:</strong> <span id="avoid-lecturer" style="color: #d63031; font-weight: bold;">유형</span></p>
+        </div>
+        
+        <button class="action-btn" onclick="location.reload()">스승님 다시 찾아보기</button>
+    </div>
+</div>
+
+<script>
+    // 10가지 정중한 상황 시나리오 질문 세트 (돌려말하기식 분석형)
+    const questions = [
+        {
+            q: "【 제 1 문 】\n학업에 정진하시던 중 홀연히 나타난 신선이 수능 만점의 비책이 담긴 서책을 제시하옵니다. 귀하의 고결한 선택은 무엇이옵니까?",
+            a: ["인과관계와 수식, 구조가 정밀하게 조립된 완벽한 논리 서책", "실전적 통찰력과 변칙적 요령이 화려하게 기술된 비법 서책"]
+        },
+        {
+            q: "【 제 2 문 】\n스승님의 명강의를 청강하던 도중, 한 번도 마주하지 못한 고난도 기출문제를 마주하셨사옵니다. 이때 귀하의 심경은 어떠하시옵니까?",
+            a: ["출제 의도를 완벽히 분해하고 구조적으로 정복하고 싶어 전율이 이옵니다.", "강사님의 실전 스킬과 직관적 풀이가 어떻게 터져 나올지 기대되옵니다."]
+        },
+        {
+            q: "【 제 3 문 】\n방대한 양의 학문적 개념을 머릿속에 수장(📥)해야 하는 엄숙한 상황이옵니다. 어떤 방식이 마음에 깊은 평온을 주옵니까?",
+            a: ["대단원부터 소단원까지 빈틈없이 백과사전식으로 정돈된 체계", "생동감 넘치는 시각적 판서와 입체적인 스토리텔링 위주의 강의"]
+        },
+        {
+            q: "【 제 4 문 】\n수능이라는 결전을 앞두고, 모의고사 성적이 잠시 정체기에 머물러 침울해지셨사옵니다. 어떤 조언이 깊은 효험이 있겠사옵니다?",
+            a: ["취약 문항 유형과 오답 데이터를 냉철하게 분석해 주는 냉정한 이성", "귀하의 잠재력을 끝까지 믿어주며 심장을 뜨겁게 달구는 따스한 격려"]
+        },
+        {
+            q: "【 제 5 문 】\n새벽 미명 하에 학습 계획을 수립하시는 고귀한 순간, 귀하의 서랍 속 플래너는 어떠한 상태이옵니까?",
+            a: ["일자별, 시간별 과목 배분이 자로 잰 듯 완벽히 기재되어 있사옵니다.", "큰 틀의 이정표만 세워둔 채 당일의 영감과 학업적 흐름을 따르옵니다."]
+        },
+        {
+            q: "【 제 6 문 】\n스승님께서 강의 중 학업과 무관한 인생의 교훈이나 유쾌한 일화를 설파하실 때 귀하의 내면은 어떻게 반응하옵니다?",
+            a: ["시간의 밀도가 낮아짐을 경계하며, 조속히 진도를 나가길 소망하옵니다.", "지친 수험 생활의 오아시스로 여겨 기쁘게 수용하옵니다."]
+        },
+        {
+            q: "【 제 7 문 】\n주변 도반들이 어떤 강의를 두고 '외워야 할 공식이나 행동 강령이 너무 많다'며 불평할 때, 귀하의 생각은 어떠하옵니까?",
+            a: ["실전에서 시간을 1초라도 단축할 수 있다면 무엇이든 체화하겠사옵니다.", "핵심 본질 하나만 깨우쳐 수만 가지 상황에 유유자적 대처함이 옳사옵니다."]
+        },
+        {
+            q: "【 제 8 문 】\n시험장에서 극도의 긴장감으로 눈앞이 흐려지는 절체절명의 순간, 귀하의 손끝을 움직이게 할 본질적 원동력은 무엇이옵니까?",
+            a: ["수백 번 반복하여 몸이 기억하는 기계적인 메커니즘과 매뉴얼", "문제의 본질을 순식간에 꿰뚫어 보는 날카로운 직관적 시야"]
+        },
+        {
+            q: "【 제 9 문 】\n스승님의 교재 패키지를 처음 마주하셨을 때, 귀하의 미적 안목이 가장 엄격하게 작동하는 지점은 어디이옵니까?",
+            a: ["한 치의 오차도 없는 내지의 정밀한 폰트 배합과 깔끔한 가독성", "감각적이고 세련된 표지 디자인과 소장 욕구를 자극하는 특별함"]
+        },
+        {
+            q: "【 제 10 문 】\n매일 고독한 학습 레이스를 묵묵히 버텨내게 만드는 내면의 가장 강력한 지탱선은 무엇이옵니까?",
+            a: ["설정해 둔 오늘의 미션을 완벽히 종결했을 때 느끼는 정돈된 희열", "미래의 찬란한 대성공의 순간을 머릿속에 그리며 타오르는 뜨거운 열정"]
+        }
+    ];
+
+    // 과목별 1타 강사 상세 데이터베이스 (A유형: 구조/논리형, B유형: 직관/열정형)
+    const resultsData = {
+        "국어": {
+            "A": {
+                lecturer: "강민철 선생님", company: "메가스터디",
+                url: "https://www.megastudy.net/teacher_v2/main.asp?tec_cd=kmc01",
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+                features: ["모든 문장을 유기적으로 엮어내는 지독한 구조 독해", "정교한 주간지 구성과 압도적 양의 고품질 문항 컨텐츠"],
+                reason: "지문을 자로 잰 듯 도식화하는 강민철 선생님의 엄밀한 방법론이 귀하의 정밀한 구조적 분석 성향과 최고의 조화를 이룹니다.",
+                rank: "2순위: 김승리 (대성마이맥), 3순위: 전형태 (대성마이맥)", avoid: "감이나 배경지식에만 의존하는 두루뭉술한 독해"
+            },
+            "B": {
+                lecturer: "김동욱 선생님", company: "메가스터디",
+                url: "https://www.megastudy.net/teacher_v2/main.asp?tec_cd=kdwmath",
+                img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
+                features: ["아침 6시 문자 메시지로 다지는 수험생의 올바른 태도 교정", "인위적 툴을 배제하고 텍스트 자체에 몰입하는 본질적 반응 독해"],
+                reason: "요령 피우지 않고 활자 자체를 정면 돌파하며 호기심을 유도하는 김동욱 선생님의 본질 추구형 강의가 귀하의 직관과 가장 잘 공명합니다.",
+                rank: "2순위: 유대종 (대성마이맥), 3순위: 김상훈 (대성마이맥)", avoid: "지나친 기호 표시와 인위적인 도식 정리에만 매몰된 강의"
+            }
+        },
+        "영어": {
+            "A": {
+                lecturer: "이명학 선생님", company: "대성마이맥",
+                url: "https://www.mimacstudy.com",
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+                features: ["평가원의 출제 코드를 낱낱이 파헤치는 정교한 논리 전개", "구문 독해의 정석을 보여주는 정돈되고 매끄러운 텍스트 분석"],
+                reason: "철저한 논리적 근거를 바탕으로 지문을 깔끔하게 장악해 들어가는 이명학 선생님의 패러다임이 귀하의 체계적인 학습관에 평온을 줍니다.",
+                rank: "2순위: 션티 (대성마이맥), 3순위: 김기철 (메가스터디)", avoid: "구문 해석 없이 대충 단어만 조합해 감으로 끼워 맞추는 리딩"
+            },
+            "B": {
+                lecturer: "조정식 선생님", company: "메가스터디",
+                url: "https://www.megastudy.net",
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+                features: ["지루함을 원천 차단하는 압도적인 흡입력과 카리스마", "실전에서 무조건 작동하는 명확하고 직관적인 행동 강령 제시"],
+                reason: "실전 변수를 유연하게 격파하는 스킬과 수험 생활 내내 뜨거운 시너지를 이끌어내는 조정식 선생님의 열정이 귀하의 성향과 찰떡궁합입니다.",
+                rank: "2순위: 주혜연 (EBSi), 3순위: 이영수 (대성마이맥)", avoid: "시험장에서 현실적으로 적용 불가능한 지나치게 현학적인 문법 강의"
+            }
+        },
+        "수학": {
+            "A": {
+                lecturer: "현우진 선생님", company: "메가스터디",
+                url: "https://www.megastudy.net/teacher_v2/main.asp?tec_cd=woojinmath",
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+                features: ["수능 수학의 도구를 완벽하게 정리해 주는 명실상부 베스트셀러 '뉴런'", "기하학적 직관과 대수적 수식을 정교하게 연결하는 치밀한 해설"],
+                reason: "치밀하게 설계된 커리큘럼과 수학적 도구 정립을 원하시는 귀하께는 완벽한 논리 구조를 제공하는 현우진 선생님이 정답입니다.",
+                rank: "2순위: 한석원 (대성마이맥), 3순위: 배성민 (대성마이맥)", avoid: "개념적 엄밀성 없이 단순 기교나 꼼수 위주로만 나열하는 강의"
+            },
+            "B": {
+                lecturer: "정승제 선생님", company: "이투스",
+                url: "https://www.etoos.com",
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+                features: ["수학의 공포를 신나는 에너지로 부숴버리는 유쾌한 명강의", "공식이 왜 유도되는지 근본적 원리를 끝까지 납득시키는 개념 본질주의"],
+                reason: "수학의 원리를 본질적으로 이해하고, 지치지 않는 활력과 격려를 공급받고자 하는 귀하의 따스한 성향과 완벽하게 공명합니다.",
+                rank: "2순위: 이미지 (대성마이맥), 3순위: 이하영 (EBSi)", avoid: "지나치게 딱딱하고 수식 위주로만 일관하는 불친절한 강의"
+            }
+        },
+        "물리": {
+            "A": {
+                lecturer: "방인혁 선생님", company: "대성마이맥",
+                url: "https://www.mimacstudy.com",
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+                features: ["물리학 교과과정에 철저히 입각한 가장 교과서적이고 엄밀한 증명", "모든 복잡한 역학 상황을 일관된 하나의 눈으로 관통하는 분석력"],
+                reason: "물리 법칙을 예외 없이 정교한 메커니즘으로 유도하고 정리하길 선호하는 귀하께는 방인혁 선생님의 정석적 패러다임이 최적입니다.",
+                rank: "2순위: 김성재 (메가스터디), 3순위: 장인수 (EBSi)", avoid: "일관성 없이 문항마다 매번 다른 야매나 꼼수로 문제를 푸는 스타일"
+            },
+            "B": {
+                lecturer: "배기범 선생님", company: "메가스터디",
+                url: "https://www.megastudy.net",
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+                features: ["대한민국 최고 수준의 엄청난 컨텐츠 보유량과 N제 라인업", "실전을 극도로 지향하여 시간 단축을 이끌어내는 입체적인 스킬 전수"],
+                reason: "압도적인 훈련량과 다채로운 실전형 해결 직관을 기르고자 하는 귀하의 도전적인 성향에는 배기범 선생님이 완벽히 매칭됩니다.",
+                rank: "2순위: 강민웅 (메가스터디), 3순위: 안철우 (이투스)", avoid: "실전 모의고사 컨텐츠가 매우 빈약하고 기초 개념만 무한 루프 도는 강의"
+            }
+        },
+        "화학": {
+            "A": {
+                lecturer: "김준 선생님", company: "대성마이맥",
+                url: "https://www.mimacstudy.com",
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+                features: ["화학의 완벽한 일관성을 확립해 주는 고품격 코드 정리", "킬러 문항인 양적 관계를 가장 깔끔하고 규칙성 있게 격파하는 도구"],
+                reason: "화학 반응을 복잡한 노가다 연산이 아닌 정교한 비율적 논리로 통제하고자 하는 귀하의 스마트한 성향에는 김준 선생님이 최선입니다.",
+                rank: "2순위: 정훈구 (메가스터디), 3순위: 신재연 (EBSi)", avoid: "정리된 일관적 기준 없이 매번 미지수 X, Y 연립방정식만 남발하는 풀이"
+            },
+            "B": {
+                lecturer: "고석용 선생님", company: "메가스터디",
+                url: "https://www.megastudy.net",
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+                features: ["베테랑의 묵직한 내공이 담긴 흔들리지 않는 촘촘한 개념 완성", "복잡한 킬러 파트의 구조를 시각적으로 단숨에 도식화해 주는 비법"],
+                reason: "기초 뼈대를 직관적으로 탄탄히 세우고 실전적 직관을 점진적으로 연마하려는 귀하의 성향은 고석용 선생님과 무척 잘 맞습니다.",
+                rank: "2순위: 박상현 (이투스), 3순위: 우마리아 (메가스터디)", avoid: "원리적 이해 과정을 생략한 채 킬러 문제 공식 무조건 암기 강요 스타일"
+            }
+        },
+        "생명": {
+            "A": {
+                lecturer: "윤도영 선생님", company: "윤도영 학원",
+                url: "https://www.youtube.com",
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+                features: ["유전 현상을 매트릭스와 기호로 수학적으로 통제하는 Yoon's Innovation", "반론과 예외를 불허하는 절대적인 기계적 알고리즘식 문제 격파"],
+                reason: "생명과학의 꽃인 유전 파트를 빈틈없는 수학적 매트릭스로 기계처럼 파괴하고 싶은 극강의 이성형 귀하께는 윤도영 선생님이 제격입니다.",
+                rank: "2순위: 최수준 (시대인재), 3순위: 변춘수 (EBSi)", avoid: "기준점 없이 유전 가계도 문제를 대충 감으로 때려 맞추는 비논리적 풀이"
+            },
+            "B": {
+                lecturer: "백호 선생님", company: "메가스터디",
+                url: "https://www.megastudy.net",
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+                features: ["수험생 누구나 편안히 진입할 수 있는 압도적 대중성과 친절함", "핵심을 명쾌하게 짚어내는 백브라더스 모의고사와 실전 스킬 전수"],
+                reason: "방대한 생명 개념을 친숙한 호흡으로 완벽하게 내재화하고 에너지를 얻고 싶어 하는 귀하께는 영원한 1타 백호 선생님이 최고의 스승입니다.",
+                rank: "2순위: 한종철 (메가스터디), 3순위: 박지향 (메가스터디)", avoid: "지나치게 지엽적이고 난해해서 실전 시험장에서는 쓰지 못할 난해한 강의"
+            }
+        },
+        "지구": {
+            "A": {
+                lecturer: "이훈식 선생님", company: "대성마이맥",
+                url: "https://www.mimacstudy.com",
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+                features: ["지구과학의 겉핥기를 거부하는 현미경 같은 지엽 개념 정밀 분석", "자료 분석의 엄밀함을 극한으로 끌어올리는 완벽한 선지 판단 훈련"],
+                reason: "평가원의 말장난 함정이나 고난도 그래프 자료를 현미경처럼 완벽하게 도려내 분석하고 싶은 귀하께는 이훈식 선생님의 치밀함이 유용합니다.",
+                rank: "2순위: 엄영대 (메가스터디), 3순위: 박선 (메가스터디)", avoid: "기출 지문만 대충 읽어주고 지엽적인 심화 추론은 피해 가는 얕은 강의"
+            },
+            "B": {
+                lecturer: "오지훈 선생님", company: "메가스터디",
+                url: "https://www.megastudy.net",
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+                features: ["트레이드 마크인 유쾌하고 쾌활한 웃음으로 가득한 러닝메이트형 강의", "방대한 지구과학 전 영역의 개념을 빈틈없이 촘촘히 엮어주는 올인원 체계"],
+                reason: "과목의 거대한 진입 장벽을 긍정의 힘과 완벽한 기본기로 부드럽게 넘어가고자 하는 귀하의 감각적 성향은 오지훈 선생님과 천생연분입니다.",
+                rank: "2순위: 함석진 (EBSi), 3순위: 최선묵 (EBSi)", avoid: "웃음기 없이 지나치게 경직되고 세부 파트만 지루하게 주입시키는 스타일"
+            }
+        },
+        "윤사": {
+            "A": {
+                lecturer: "김종익 선생님", company: "메가스터디",
+                url: "https://www.megastudy.net",
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+                features: ["사상가들의 원전 스크립트를 바탕으로 푸는 깊이 있는 철학적 추적", "평가원의 꼬인 말장난 선지를 완벽 분쇄하는 명쾌한 개념 연결 고리"],
+                reason: "동서양 사상가들의 고뇌를 논리적인 인과관계로 정교하게 추적하고자 하는 귀하의 학구적 태도에는 김종익 선생님이 아주 적합합니다.",
+                rank: "2순위: 임정환 (대성마이맥), 3순위: 최양진 (EBSi)", avoid: "사상적 맥락 이해 없이 무조건 앞 글자만 따서 두문자 암기만 시키는 강의"
+            },
+            "B": {
+                lecturer: "이지영 선생님", company: "이투스",
+                url: "https://www.etoos.com",
+                img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
+                features: ["자체 제작 올인원 필기 노트로 완성되는 흔들림 없는 완벽한 가시성", "수험생들의 영혼을 울리는 명품 인생 조언과 독보적인 동기부여 페이스메이커"],
+                reason: "체계적으로 구조화된 깔끔한 컬러 판서 정리를 선호하며, 가슴 뜨거운 격려와 열정을 필요로 하는 귀하께는 이지영 선생님이 정답입니다.",
+                rank: "2순위: 강상식 (메가스터디), 3순위: 김성묵 (EBSi)", avoid: "노트 구조화 없이 책만 흐릿하게 빔 프로젝터로 띄워 읽어내려가는 강의"
+            }
+        },
+        "사문": {
+            "A": {
+                lecturer: "윤성훈 선생님", company: "메가스터디",
+                url: "https://www.megastudy.net",
+                img: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150",
+                features: ["사회문화 최고 난제인 통계/도표 문항을 가장 직관적이고 빠르게 뚫는 비법", "실제 사회 현상의 날카로운 비유로 개념을 관통하는 명쾌함"],
+                reason: "표 분석과 도표 통계 문항을 정밀하고 예리한 수학적 비율 수식 논리로 정복하려는 귀하의 계량적 성향에는 윤성훈 선생님이 원탑입니다.",
+                rank: "2순위: 임정환 (대성마이맥), 3순위: 박봄 (EBSi)", avoid: "도표 문제의 근본 수식 메커니즘을 생략하고 찍기 위주로만 때우는 풀이"
+            },
+            "B": {
+                lecturer: "이지영 선생님", company: "이투스",
+                url: "https://www.etoos.com",
+                img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
+                features: ["출제 의도를 정확히 관통하여 고난도 오답률을 격파하는 4단계 선지 분석", "개념의 흐름과 사회학 이론을 한눈에 보게 만드는 독보적 판서의 미학"],
+                reason: "사회학 이론을 일목요연한 노트 필기로 정리하는 구조적 정리와 강력한 위로의 시너지를 원하는 귀하께는 이지영 선생님이 아름다운 동반자입니다.",
+                rank: "2순위: 최적 (메가스터디), 3순위: 배준호 (대성마이맥)", avoid: "구조적이고 일목요연한 필기 프레임 없이 구두 설명으로 때우는 불친절한 수업"
+            }
+        }
+    };
+
+    let selectedSubject = "";
+    let currentIdx = 0;
+    let scores = { A: 0, B: 0 };
+
+    // 과목 선택 함수
+    function selectSubject(subject, btn) {
+        selectedSubject = subject;
+        document.querySelectorAll('.subject-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        
+        let startBtn = document.getElementById('start-btn');
+        startBtn.disabled = false;
+        startBtn.style.background = "var(--primary-color)";
+        startBtn.style.cursor = "pointer";
+        startBtn.innerText = "선택하신 [" + subject + "] 강사 추천 진단 시작하기";
+    }
+
+    // 퀴즈 시작 함수
+    function startQuiz() {
+        document.getElementById('start-screen').classList.remove('active');
+        document.getElementById('quiz-screen').classList.add('active');
+        showQuestion();
+    }
+
+    // 질문 로드 함수
+    function showQuestion() {
+        if(currentIdx >= questions.length) {
+            showResult();
+            return;
+        }
+        
+        // 상단 바 및 퍼센트 수식 계산
+        let percent = Math.round((currentIdx / questions.length) * 100);
+        document.getElementById('progress-bar').style.width = percent + '%';
+        document.getElementById('progress-percent').innerText = percent + '%';
+
+        // 질문 공간 세팅
+        let qObj = questions[currentIdx];
+        document.getElementById('question-space').innerText = qObj.q;
+        document.getElementById('ans1').innerText = qObj.a[0];
+        document.getElementById('ans2').innerText = qObj.a[1];
+    }
+
+    // 답변 선택 및 점수 합산
+    function selectAnswer(type) {
+        if(type === 'A') scores.A++;
+        else scores.B++;
+
+        currentIdx++;
+        showQuestion();
+    }
+
+    // 결과 화면 노출 함수
+    function showResult() {
+        document.getElementById('quiz-screen').classList.remove('active');
+        document.getElementById('result-screen').classList.add('active');
+
+        // 사용자가 더 많이 선택한 유형(A or B) 도출
+        let finalStyle = (scores.A >= scores.B) ? "A" : "B";
+        let data = resultsData[selectedSubject][finalStyle];
+
+        // 정밀도(%) 동적 산출식: 기본 신뢰도 80% + 일치 성향에 따른 가중치 + 무작위 미세 편차
+        let maxScore = Math.max(scores.A, scores.B);
+        let dynamicAccuracy = 78 + (maxScore * 1.8) + Math.floor(Math.random() * 4);
+        if(dynamicAccuracy > 100) dynamicAccuracy = 100;
+
+        // 동적 데이터 매핑 바인딩
+        document.getElementById('match-accuracy').innerText = dynamicAccuracy + "%";
+        document.getElementById('lecturer-name').innerText = data.lecturer;
+        document.getElementById('lecturer-company').innerText = data.company;
+        document.getElementById('lecturer-img').src = data.img;
+        document.getElementById('lecturer-link').href = data.url;
+        document.getElementById('match-reason').innerText = data.reason;
+        document.getElementById('rank-list').innerText = data.rank;
+        document.getElementById('avoid-lecturer').innerText = data.avoid;
+
+        // 개조식 특징 동적 렌더링
+        let featuresUl = document.getElementById('lecturer-features');
+        featuresUl.innerHTML = "";
+        data.features.forEach(f => {
+            let li = document.createElement('li');
+            li.innerText = f;
+            featuresUl.appendChild(li);
+        });
+    }
+</script>
+</body>
+</html>
